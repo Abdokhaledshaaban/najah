@@ -252,7 +252,7 @@ function guideSigns() {
 }
 function guideDo() {
   guideStep = 4;
-  guide.innerHTML = `<div class="guide-question">فكرة الحل في ENQEZ</div><div class="guide-result"><h4>الأولوية: السلامة + المساعدة المناسبة</h4><p class="result-note">${currentCase.doText}</p><h5 class="mt-4">أشياء نتجنبها</h5><ul>${currentCase.avoid.map((x) => `<li class="mb-2">${x}</li>`).join('')}</ul></div><div class="guide-actions"><button class="btn btn-outline-light rounded-pill" onclick="guideStart()">حالة أخرى</button><a class="btn btn-danger rounded-pill" href="cases.html">مكتبة الحالات</a></div>`;
+  guide.innerHTML = `<div class="guide-question">فكرة الحل في NAJAH</div><div class="guide-result"><h4>الأولوية: السلامة + المساعدة المناسبة</h4><p class="result-note">${currentCase.doText}</p><h5 class="mt-4">أشياء نتجنبها</h5><ul>${currentCase.avoid.map((x) => `<li class="mb-2">${x}</li>`).join('')}</ul></div><div class="guide-actions"><button class="btn btn-outline-light rounded-pill" onclick="guideStart()">حالة أخرى</button><a class="btn btn-danger rounded-pill" href="cases.html">مكتبة الحالات</a></div>`;
   updateGuideProgress(4);
 }
 function updateGuideProgress(n) {
