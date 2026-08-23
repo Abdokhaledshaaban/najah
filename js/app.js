@@ -1,4 +1,4 @@
-const SITE_URL = 'https://example.com'; // غيّر هذا إلى رابط الموقع النهائي قبل العرض
+const SITE_URL = 'https://abdokhaledshaaban.github.io/najah/'; // غيّر هذا إلى رابط الموقع النهائي قبل العرض
 
 document.addEventListener('DOMContentLoaded', () => {
   const loader = document.getElementById('loader');
