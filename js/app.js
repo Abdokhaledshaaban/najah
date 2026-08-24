@@ -1,5 +1,25 @@
 const SITE_URL = 'https://abdokhaledshaaban.github.io/najah/';
 
+  /* Existing QR */
+  const qr = document.getElementById('qrcode');
+
+  if (qr && typeof QRCode !== 'undefined') {
+    new QRCode(qr, {
+      text: SITE_URL,
+      width: 220,
+      height: 220,
+      colorDark: '#0A192F',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H,
+    });
+
+    const preview = document.getElementById('siteUrlPreview');
+
+    if (preview) {
+      preview.textContent = SITE_URL;
+    }
+  }
+
 document.addEventListener('DOMContentLoaded', () => {
   const loader = document.getElementById('loader');
   setTimeout(() => {
