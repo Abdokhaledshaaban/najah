@@ -690,9 +690,9 @@ h2 em {
   margin-bottom: 25px;
 }
 .guide-options {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
   gap: 14px;
+  flex-wrap: wrap;
 }
 .guide-option {
   padding: 22px;
@@ -702,6 +702,7 @@ h2 em {
   color: #fff;
   border-radius: 18px;
   transition: 0.25s;
+  width: 90%;
 }
 .guide-option:hover {
   border-color: #e5393560;
