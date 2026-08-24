@@ -1,1132 +1,385 @@
-/* ============================================================
-   NAJAH — Unified app.js
-   Merged from the original app.js + app(1).js
-   Frontend only: HTML + CSS + JavaScript + Bootstrap
-   ============================================================ */
-
 const SITE_URL = 'https://abdokhaledshaaban.github.io/najah/';
-const EMERGENCY_NUMBER = '123';
-
-/* ============================================================
-   HELPERS
-   ============================================================ */
-
-const escapeHTML = (value = '') =>
-  String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-
-const linesToHTML = (value = '') =>
-  escapeHTML(value).replace(/\n/g, '<br>');
-
-const callEmergencyHTML = `
-  <a href="tel:${EMERGENCY_NUMBER}"
-     class="btn btn-danger rounded-pill">
-    <i class="bi bi-telephone-fill ms-1"></i>
-    الإسعاف ${EMERGENCY_NUMBER}
-  </a>
-`;
-
-/* ============================================================
-   INITIAL UI / EXISTING ANIMATIONS
-   ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-  const loader = document.getElementById('loader');
+  const loader = document.getElementById('loader');
+  setTimeout(() => {
+    if (loader) {
+      loader.style.opacity = '0';
+      setTimeout(() => loader.remove(), 650);
+    }
+  }, 450);
 
-  setTimeout(() => {
-    if (loader) {
-      loader.style.opacity = '0';
-      setTimeout(() => loader.remove(), 650);
-    }
-  }, 450);
+  const io = new IntersectionObserver(
+    (entries) =>
+      entries.forEach((e) => {
+        if (e.isIntersecting) e.target.classList.add('show');
+      }),
+    { threshold: 0.12 }
+  );
+  document.querySelectorAll('.reveal').forEach((x) => io.observe(x));
 
-  /* Keep the original reveal animation */
-  const io = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('show');
-        }
-      });
-    },
-    { threshold: 0.12 }
-  );
-
-  document.querySelectorAll('.reveal').forEach((element) => {
-    io.observe(element);
-  });
-
-  /* Keep the original counters */
-  document.querySelectorAll('[data-count]').forEach((element) => {
-    const target = Number(element.dataset.count);
-    let number = 0;
-    const step = Math.max(1, Math.ceil(target / 40));
-
-    const timer = setInterval(() => {
-      number = Math.min(target, number + step);
-      element.textContent = number + (target === 100 ? '%' : '');
-
-      if (number >= target) {
-        clearInterval(timer);
-      }
-    }, 30);
-  });
-
-  /* Existing QR */
-  const qr = document.getElementById('qrcode');
-
-  if (qr && typeof QRCode !== 'undefined') {
-    new QRCode(qr, {
-      text: SITE_URL,
-      width: 220,
-      height: 220,
-      colorDark: '#0A192F',
-      colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.H,
-    });
-
-    const preview = document.getElementById('siteUrlPreview');
-
-    if (preview) {
-      preview.textContent = SITE_URL;
-    }
-  }
-
-  /* Existing checklist */
-  const checklist = document.getElementById('checklist');
-
-  if (checklist) {
-    const boxes = [...checklist.querySelectorAll('input')];
-    const score = document.getElementById('score');
-
-    boxes.forEach((box) => {
-      box.addEventListener('change', () => {
-        if (!boxes.length || !score) return;
-
-        const percentage = Math.round(
-          (boxes.filter((item) => item.checked).length / boxes.length) * 100
-        );
-
-        score.textContent = percentage + '%';
-      });
-    });
-  }
+  document.querySelectorAll('[data-count]').forEach((el) => {
+    const target = Number(el.dataset.count);
+    let n = 0;
+    const step = Math.max(1, Math.ceil(target / 40));
+    const t = setInterval(() => {
+      n = Math.min(target, n + step);
+      el.textContent = n + (target === 100 ? '%' : '');
+      if (n >= target) clearInterval(t);
+    }, 30);
+  });
 });
 
-/* ============================================================
-   EMERGENCY DATA
-   NOTE:
-   This is educational content. In a real emergency, contact
-   local emergency services and follow dispatcher instructions.
-   Practical CPR/choking skills should be learned hands-on.
-   ============================================================ */
-
+/* ---------- Emergency Cases & Multi-Step Decision Tree Data ---------- */
 const CASES = [
-  {
-    id: 'stroke',
-    icon: 'bi-brain',
-    title: 'السكتة الدماغية',
-    tag: 'TIME SENSITIVE',
-    short:
-      'أعراض عصبية مفاجئة تحتاج إلى التعرف عليها وطلب المساعدة الطبية بسرعة.',
-
-    signs: [
-      'ضعف أو تنميل مفاجئ، خصوصًا في جانب واحد من الجسم.',
-      'صعوبة مفاجئة في الكلام أو فهم الكلام.',
-      'اضطراب مفاجئ في الرؤية أو المشي أو التوازن.',
-      'صداع شديد مفاجئ قد يحدث في بعض أنواع السكتة.',
-    ],
-
-    action:
-      'تعرف على العلامات واطلب المساعدة الطبية العاجلة. سجّل وقت بداية الأعراض أو آخر وقت كان فيه الشخص طبيعيًا إن أمكن، وأخبر خدمات الطوارئ به.',
-
-    detailedAction: [
-      'اطلب الإسعاف فورًا عند الاشتباه في السكتة الدماغية.',
-      'لا تنتظر اختفاء الأعراض ولا تحاول تشخيص النوع بنفسك.',
-      'سجّل وقت بداية الأعراض أو آخر وقت كان فيه الشخص طبيعيًا إن أمكن.',
-      'راقب الاستجابة والتنفس وابقَ مع الشخص حتى وصول المساعدة.',
-    ],
-
-    avoid: [
-      'لا تعطِ أدوية من عندك، بما فيها الأسبرين، لأن نوع السكتة لا يمكن تحديده بأمان في المنزل.',
-      'لا تعطِ طعامًا أو شرابًا إذا كان البلع غير آمن أو الشخص غير يقظ تمامًا.',
-      'لا تؤخر طلب الإسعاف من أجل البحث عن علاج منزلي.',
-    ],
-
-    source:
-      'محتوى توعوي مستند إلى إرشادات الإسعافات الأولية والإنعاش الحديثة من American Red Cross وAHA/ASA.',
-
-    tree: {
-      question:
-        'هل توجد علامات مفاجئة مثل ضعف في جانب واحد، اضطراب الكلام، أو اضطراب الرؤية/التوازن؟',
-
-      yes: {
-        action:
-          'اشتبِه في السكتة الدماغية: اطلب الإسعاف فورًا، وسجّل وقت بداية الأعراض أو آخر وقت كان فيه الشخص طبيعيًا، وراقب حالته حتى وصول المساعدة.',
-
-        avoid:
-          'لا تنتظر تحسن الأعراض، ولا تعطِ أدوية أو طعامًا أو شرابًا من تلقاء نفسك.',
-      },
-
-      no: {
-        action:
-          'إذا لم توجد هذه العلامات، لا تحاول تشخيص الحالة من خلال الموقع. إذا كانت الأعراض شديدة أو مفاجئة أو تتدهور، اطلب تقييمًا طبيًا عاجلًا.',
-
-        avoid:
-          'لا تعتمد على الاختبار وحده لاستبعاد السكتة الدماغية.',
-      },
-    },
-  },
-
-  {
-    id: 'choking',
-    icon: 'bi-lungs',
-    title: 'الاختناق',
-    tag: 'AIRWAY',
-    short:
-      'انسداد مجرى الهواء قد يصبح خطيرًا بسرعة، والاستجابة تختلف حسب العمر وشدة الانسداد.',
-
-    signs: [
-      'عدم القدرة على الكلام أو السعال بشكل فعال.',
-      'صعوبة شديدة في التنفس.',
-      'إشارات واضحة للاختناق مثل الإمساك بالرقبة.',
-      'تدهور الوعي أو فقدان الاستجابة.',
-    ],
-
-    action:
-      'حدّد أولًا هل الشخص يستطيع السعال أو الكلام والتنفس. إذا كان الانسداد شديدًا، اطلب المساعدة واتبع تعليمات خدمات الطوارئ والتدريب المعتمد.',
-
-    detailedAction: [
-      'إذا كان الشخص يستطيع السعال أو الكلام والتنفس، شجعه على الاستمرار في السعال وراقبه.',
-      'إذا أصبح غير قادر على الكلام أو السعال أو التنفس بشكل فعال، فعّل الاستجابة الطارئة واطلب المساعدة فورًا.',
-      'إجراءات الاختناق تختلف للرضيع والطفل والبالغ وللحامل أو الشخص ذي البنية الكبيرة؛ لا تستخدم تقنية واحدة للجميع.',
-      'إذا أصبح الشخص غير مستجيب، اتبع تعليمات خدمات الطوارئ وابدأ الإنعاش وفق تدريبك وتعليمات عامل الطوارئ.',
-    ],
-
-    avoid: [
-      'لا تستخدم مناورة واحدة لكل الأعمار والحالات.',
-      'لا تدخل أصابعك عشوائيًا داخل فم شخص فاقد للوعي؛ أزل جسمًا غريبًا فقط إذا كان ظاهرًا ويمكن إزالته بأمان.',
-      'لا تجعل تصفح الموقع يؤخر الاتصال بالطوارئ.',
-    ],
-
-    source:
-      'محتوى توعوي مستند إلى إرشادات AHA وAmerican Red Cross الخاصة بانسداد مجرى الهواء.',
-
-    tree: {
-      question:
-        'هل يستطيع المصاب السعال أو الكلام أو إصدار صوت بشكل فعال؟',
-
-      yes: {
-        action:
-          'شجعه على السعال وراقبه عن قرب. إذا تدهورت قدرته على التنفس أو الكلام أو أصبح غير مستجيب، اطلب المساعدة الطارئة فورًا.',
-
-        avoid:
-          'لا تعطه طعامًا أو شرابًا بهدف دفع الجسم الغريب إلى الأسفل، ولا تستخدم إجراءات قوية بلا تدريب.',
-      },
-
-      no: {
-        action:
-          'اعتبر الانسداد شديدًا. اطلب الإسعاف فورًا واتبع تعليمات عامل الطوارئ. بالنسبة للبالغين والأطفال والرضع توجد تقنيات مختلفة، ويجب تطبيقها وفق التدريب المناسب.',
-
-        avoid:
-          'لا تستخدم نفس طريقة الاختناق للبالغ مع الرضيع أو الطفل، ولا تحاول استخراج جسم غير ظاهر بإصبعك.',
-      },
-    },
-  },
-
-  {
-    id: 'cardiac',
-    icon: 'bi-heart-pulse',
-    title: 'توقف القلب / فقدان الاستجابة',
-    tag: 'CPR & AED',
-    short:
-      'فقدان الاستجابة مع غياب التنفس الطبيعي أو وجود شهقات غير طبيعية علامة طارئة.',
-
-    signs: [
-      'الشخص لا يستجيب عند مناداته أو محاولة إيقاظه.',
-      'لا يتنفس طبيعيًا أو توجد شهقات غير طبيعية.',
-      'الحالة تتطلب تفعيل الاستجابة الطارئة فورًا.',
-    ],
-
-    action:
-      'اطلب الإسعاف فورًا. إذا كان الشخص غير مستجيب ولا يتنفس طبيعيًا، ابدأ CPR وفق تدريبك أو اتبع تعليمات عامل الطوارئ، واستخدم AED عندما يتوفر ويكون آمنًا.',
-
-    detailedAction: [
-      'تأكد من أن المكان آمن لك وللمصاب.',
-      'تحقق من الاستجابة والتنفس الطبيعي بسرعة.',
-      'اطلب من شخص محدد الاتصال بالطوارئ وإحضار AED إن توفر.',
-      'إذا كان الشخص غير مستجيب ولا يتنفس طبيعيًا، ابدأ CPR وفق تدريبك أو تعليمات عامل الطوارئ.',
-      'استخدم AED عندما يتوفر واتبع تعليماته الصوتية والمرئية.',
-      'استمر في المساعدة حتى وصول فرق الطوارئ أو عودة علامات الحياة أو عدم قدرتك على الاستمرار.',
-    ],
-
-    avoid: [
-      'لا تنتظر طويلًا قبل تفعيل الاستجابة الطارئة.',
-      'لا تستخدم AED في بيئة غير آمنة أو بطريقة تخالف تعليماته.',
-      'لا توقف الإنعاش لمجرد أن الشخص لم يستجب فورًا.',
-    ],
-
-    source:
-      'محتوى توعوي مستند إلى إرشادات AHA وAmerican Red Cross للـBLS/CPR/AED.',
-
-    tree: {
-      question:
-        'هل الشخص غير مستجيب ولا يتنفس طبيعيًا أو لديه شهقات غير طبيعية؟',
-
-      yes: {
-        action:
-          'فعّل الاستجابة الطارئة فورًا. ابدأ CPR وفق تدريبك أو تعليمات عامل الطوارئ، واستخدم AED عند توفره وبشكل آمن.',
-
-        avoid:
-          'لا تؤخر طلب المساعدة ولا تنتظر التأكد لفترة طويلة.',
-      },
-
-      no: {
-        action:
-          'إذا كان الشخص يستجيب أو يتنفس طبيعيًا، راقبه واطلب التقييم المناسب إذا كانت هناك مشكلة صحية مستمرة أو خطيرة.',
-
-        avoid:
-          'لا تبدأ CPR على شخص يتنفس طبيعيًا ويستجيب بشكل طبيعي.',
-      },
-    },
-  },
-
-  {
-    id: 'bleeding',
-    icon: 'bi-droplet-half',
-    title: 'النزيف الشديد',
-    tag: 'BLEEDING',
-    short:
-      'النزيف الخارجي المهدد للحياة يحتاج إلى استجابة سريعة وتفعيل المساعدة الطبية.',
-
-    signs: [
-      'نزيف غزير أو مستمر.',
-      'الدم يتجمع أو يتشبع به القماش بسرعة.',
-      'علامات ضعف أو تدهور عام مع النزيف.',
-    ],
-
-    action:
-      'احمِ نفسك، اطلب المساعدة عند النزيف الخطير، واستخدم وسائل السيطرة على النزيف التي تعلمتها في تدريب معتمد.',
-
-    detailedAction: [
-      'تأكد من سلامة المكان واستخدم وسائل حماية مناسبة إن توفرت.',
-      'اطلب خدمات الطوارئ عند وجود نزيف مهدد للحياة.',
-      'استخدم ضغطًا مباشرًا ومستمرًا على النزيف باستخدام شاش أو قطعة قماش مناسبة.',
-      'إذا كنت مدربًا على وسائل إضافية للسيطرة على النزيف، اتبع التدريب المعتمد وتعليمات الطوارئ.',
-      'راقب الشخص حتى وصول المساعدة.',
-    ],
-
-    avoid: [
-      'لا تعرض نفسك للدم دون احتياطات مناسبة.',
-      'لا ترفع الضمادة مرارًا لفحص الجرح؛ اتبع تدريب السيطرة على النزيف.',
-      'لا تضع القهوة أو معجون الأسنان أو مواد منزلية داخل الجرح.',
-    ],
-
-    source:
-      'محتوى توعوي مستند إلى إرشادات American Red Cross للإسعافات الأولية والسيطرة على النزيف.',
-
-    tree: {
-      question:
-        'هل النزيف غزير أو مستمر أو يبدو مهددًا للحياة؟',
-
-      yes: {
-        action:
-          'اطلب الإسعاف فورًا، واستخدم ضغطًا مباشرًا ومستمرًا على مكان النزيف بوسيلة مناسبة، مع حماية نفسك من الدم.',
-
-        avoid:
-          'لا تؤخر طلب المساعدة ولا تضع مواد منزلية داخل الجرح.',
-      },
-
-      no: {
-        action:
-          'استمر في مراقبة النزيف واطلب تقييمًا طبيًا إذا لم يتوقف أو ظهرت علامات تدهور.',
-
-        avoid:
-          'لا تهمل جرحًا عميقًا أو نزيفًا مستمرًا لمجرد أنه يبدو صغيرًا في البداية.',
-      },
-    },
-  },
-
-  {
-    id: 'burns',
-    icon: 'bi-fire',
-    title: 'الحروق',
-    tag: 'THERMAL INJURY',
-    short:
-      'تختلف الحروق في شدتها، وبعضها يحتاج إلى تقييم طبي عاجل.',
-
-    signs: [
-      'حرق واسع أو عميق.',
-      'حرق في الوجه أو الفم أو اليدين أو المفاصل أو مناطق حساسة.',
-      'حرق كهربائي أو كيميائي أو مرتبط بانفجار.',
-      'جلد أبيض أو أسود أو متفحم أو ألم غير معتاد.',
-    ],
-
-    action:
-      'أبعد الشخص عن مصدر الخطر إذا كان ذلك آمنًا، وبرّد الحرق بماء جارٍ نظيف وبارد باعتدال للحروق البسيطة، واطلب تقييمًا طبيًا للحروق الكبيرة أو العميقة أو الخاصة.',
-
-    detailedAction: [
-      'أوقف مصدر الحرارة أو أبعد الشخص عنه فقط إذا كان ذلك آمنًا.',
-      'أزل الملابس أو الإكسسوارات غير الملتصقة بمنطقة الحرق.',
-      'للحرق البسيط، برّد المنطقة بماء جارٍ نظيف وبارد باعتدال لمدة مناسبة وفق إرشادات الإسعافات الأولية.',
-      'لا تنزع أي شيء ملتصق بالجلد المحروق.',
-      'غطِّ الحرق بشكل فضفاض بضمادة نظيفة مناسبة إذا كانت هناك حاجة لذلك.',
-      'اطلب رعاية طبية عاجلة للحروق الكبيرة أو العميقة، أو حروق الوجه/الفم/اليدين/المفاصل، أو الحروق الكهربائية والكيميائية، أو عند وجود صعوبة في التنفس.',
-    ],
-
-    avoid: [
-      'لا تضع الثلج مباشرة على الحرق.',
-      'لا تضع الزبدة أو معجون الأسنان أو وصفات منزلية غير موثوقة.',
-      'لا تفقع الفقاعات.',
-      'لا تنزع الملابس الملتصقة بالجلد.',
-    ],
-
-    source:
-      'محتوى توعوي مستند إلى إرشادات American Red Cross للحروق؛ الإرشادات المنشورة توصي بالماء الجاري النظيف البارد باعتدال وتجنب الثلج والوصفات المنزلية.',
-
-    tree: {
-      question:
-        'هل الحرق كبير أو عميق أو كهربائي/كيميائي أو في منطقة حساسة أو توجد صعوبة في التنفس؟',
-
-      yes: {
-        action:
-          'اطلب تقييمًا طبيًا عاجلًا. أبعد الشخص عن مصدر الخطر إن كان ذلك آمنًا، ولا تضع مواد منزلية على الحرق.',
-
-        avoid:
-          'لا تستخدم الثلج مباشرة ولا تنزع الملابس الملتصقة بالجلد.',
-      },
-
-      no: {
-        action:
-          'للحرق البسيط، برّد المنطقة بماء جارٍ نظيف وبارد باعتدال، ثم غطها بشكل مناسب إذا لزم الأمر وراقبها.',
-
-        avoid:
-          'لا تستخدم الزبدة أو معجون الأسنان أو أي وصفة منزلية غير موثوقة.',
-      },
-    },
-  },
-
-  {
-    id: 'drowning',
-    icon: 'bi-water',
-    title: 'الغرق',
-    tag: 'WATER SAFETY',
-    short:
-      'الغرق حالة مرتبطة بنقص الأكسجين وتحتاج إلى استجابة عاجلة مع الحفاظ على سلامة المنقذ.',
-
-    signs: [
-      'عدم الاستجابة بعد إخراج الشخص من الماء.',
-      'غياب التنفس الطبيعي أو وجود صعوبة واضحة في التنفس.',
-      'تدهور الحالة بعد حادث غرق.',
-    ],
-
-    action:
-      'لا تعرض نفسك للخطر أثناء الإنقاذ. اطلب خدمات الطوارئ. إذا كان هناك توقف قلب بعد الغرق، توصي الإرشادات ببدء الإنعاش مع التهوية عندما يكون المنقذ مدربًا وقادرًا، مع اتباع تعليمات الطوارئ.',
-
-    detailedAction: [
-      'لا تدخل الماء لإنقاذ شخص إذا كان ذلك سيعرضك للخطر؛ استخدم وسيلة آمنة للمساعدة واطلب المختصين.',
-      'بعد إخراج الشخص من الماء، قيّم الاستجابة والتنفس بسرعة.',
-      'إذا كان فاقدًا للوعي ولا يتنفس طبيعيًا، فعّل الاستجابة الطارئة وابدأ CPR وفق تدريبك وتعليمات عامل الطوارئ.',
-      'في حالات توقف القلب بسبب الغرق، تركز إرشادات Red Cross على التهوية مع الضغطات للمنقذين القادرين والمدربين، بينما يظل الضغط الصدري خيارًا إذا تعذر إعطاء الأنفاس.',
-      'استخدم AED عندما يتوفر ويكون ذلك آمنًا، بعد إخراج الشخص من الماء وتجفيف الصدر وفق تعليماته.',
-    ],
-
-    avoid: [
-      'لا تدخل الماء إذا كان ذلك سيعرضك للخطر.',
-      'لا تضيع الوقت في محاولة إخراج الماء من المعدة بالضغط على البطن.',
-      'لا تؤخر الاتصال بالطوارئ.',
-    ],
-
-    source:
-      'محتوى توعوي مستند إلى إرشادات American Red Cross وILCOR حول الإنعاش بعد الغرق.',
-
-    tree: {
-      question:
-        'بعد إخراج المصاب من الماء، هل هو واعٍ ويتنفس طبيعيًا؟',
-
-      yes: {
-        action:
-          'راقب حالته واطلب التقييم الطبي عند وجود أعراض تنفسية أو تدهور بعد الغرق، مع إبقاء الشخص دافئًا وآمنًا.',
-
-        avoid:
-          'لا تترك الشخص وحده إذا كانت حالته تتدهور أو تظهر أعراض تنفسية.',
-      },
-
-      no: {
-        action:
-          'فعّل الاستجابة الطارئة فورًا. إذا كان لا يتنفس طبيعيًا، ابدأ CPR وفق تدريبك وتعليمات الطوارئ؛ وفي الغرق، تكون التهوية مهمة للمنقذ المدرب والقادر.',
-
-        avoid:
-          'لا تدخل الماء لإنقاذه إذا كان ذلك سيعرضك للخطر، ولا تحاول عصر الماء من البطن.',
-      },
-    },
-  },
+  {
+    id: 'unknown',
+    icon: 'bi-question-diamond-fill',
+    title: 'لا أعلم ماذا حدث للمصاب!',
+    tag: 'DIAGNOSIS',
+    short: 'مسار تشخيصي سريع يعتمد على مراقبة العلامات الحيوية للوصول للإنقاذ المناسب.',
+    signs: ['فقدان الوعي أو الإغماء', 'صعوبة التنفس', 'نزيف ظاهري', 'تغير في حركة الجسم'],
+    tree: {
+      id: 'q_un_1',
+      question: 'هل المصاب يتنفس أو يستجيب لمناداته وهز كتفيه ببطء؟',
+      yes: {
+        id: 'q_un_2',
+        question: 'هل توجد جروح مفتوحة تنزف بانتظام أو حروق/تشوهات ظاهرة على جسمه؟',
+        yes: {
+          action: '1. إذا كان ينزف: اضغط بكل قوتك باستخدام قطعة قماش نظيفة على مكان النزيف بشكل مباشر دون رفع يدك.\n2. إذا كان حرقاً: صب ماء صنبور عادي (فاتر) على الحرق لمدة 15 دقيقة متواصلة وغطه بقماش أو نايلون نظيف.\n3. دع المصاب مستلقياً في مكانه ولا تحركه بدون داعٍ.',
+          avoid: 'لا تضع معجون أسنان، ثلج، أو قهوة على الحروق والجروح.'
+        },
+        no: {
+          id: 'q_un_3',
+          question: 'هل يلاحظ ارتخاء في أحد جانبي الوجه، ثقل في الكلام، أو ضعف في ذراع واحدة؟',
+          yes: {
+            action: 'هذه علامات سكتة دماغية:\n1. اجعل المصاب مستلقياً على ظهره مع رفع رأسه وكتفيه بأسنان وسائد (بزاوية 30 درجة).\n2. هدىء المصاب وراقب تنفسه بانتظام حتى وصول الإسعاف.',
+            avoid: 'لا تعطِه أي شيء ليأكله أو يشربه أو يستنشقه ولا تعطِه أسبرين إطلاقاً.'
+          },
+          no: {
+            action: 'ضعه في "وضع الإفاقة": أمله على أحد جانبيه، واجعل رأسه مائلاً للوراء قليلاً لفتح مجرى الهواء لمنع اختناقه بلسانه أو بقيئه، وابقَ بجانبه.',
+            avoid: 'لا تتركه مستلقياً على ظهره إذا كان فاقداً للوعي جزئياً.'
+          }
+        }
+      },
+      no: {
+        action: 'توقف في القلب والنفس (حالة طارئة قصوى):\n1. ضع المصاب على ظهره على أرضية صلبة.\n2. ضع كعب يدك الأولى في منتصف صدره تماماً (بين الثديين) وضع يدك الثانية فوق الأولى واشبك أصابعك.\n3. اضغط بقوة وسرعة للأسفل بمقدار 5 سم بمعدل 100 إلى 120 ضغطة في الدقيقة (حوالي ضغطتين كل ثانية) واستمر دون توقف حتى وصول الإسعاف.',
+        avoid: 'لا تتوقف عن الضغط الصدري أكثر من 10 ثوانٍ ولا تضغط على البطن.'
+      }
+    },
+    source: 'AHA Emergency First Aid Protocol.'
+  },
+  {
+    id: 'stroke',
+    icon: 'bi-brain',
+    title: 'السكتة الدماغية',
+    tag: 'TIME SENSITIVE',
+    short: 'أعراض عصبية مفاجئة تحتاج إلى التعرف عليها فوراً.',
+    signs: ['ارتخاء أو اعوجاج مفاجئ في الوجه.', 'ضعف أو عدم القدرة على رفع إحدى الذراعين.', 'ثقل شديد أو صعوبة في الكلام.'],
+    tree: {
+      id: 'q_str_1',
+      question: 'هل تلاحظ اعوجاجاً في فمه عند الإبتسام، أو ضعفاً في رفع إحدى يديه؟',
+      yes: {
+        id: 'q_str_2',
+        question: 'هل واجه صعوبة في نطق اسمه أو استيعاب كلامك عند التحدث معه؟',
+        yes: {
+          action: '1. اجعل المصاب يستلقي فوراً في مكان مريح.\n2. ارفع رأسه وكتفيه قليلاً باستخدام الوسائد (بزاوية 30 درجة تقريباً) لتقليل الضغط على الدماغ.\n3. افحص وقيد وقت ظهور أول أعراض بالضبط لتخبر بها طبيب الإسعاف.',
+          avoid: 'لا تعطِه أي دواء (بما في ذلك الأسبرين) ولا تقدم له طعاماً أو ماءً لأن عضلات البلع قد تكون مشلولة فيختنق.'
+        },
+        no: {
+          action: 'اجعله يستريح في وضعية جلوس مريحة وراقب تطور الأعراض بدقة.',
+          avoid: 'لا تدعه يتحرك أو يقف بمفرده.'
+        }
+      },
+      no: {
+        action: 'إذا كانت الأعراض مجرد دوخة مفاجئة، اجعله يجلس في مكان آمن وبارد وشرب القليل من الماء.',
+        avoid: 'لا تجعله يجهد نفسه بالقيام بأي نشاط بدني.'
+      }
+    },
+    source: 'AHA/ASA Stroke Guidelines.'
+  },
+  {
+    id: 'choking',
+    icon: 'bi-lungs',
+    title: 'الاختناق',
+    tag: 'AIRWAY',
+    short: 'انسداد مجرى الهواء نتيجة وجود جسم غريب.',
+    signs: ['الإمساك بالرقبة بكلا اليدين.', 'عدم القدرة على الكلام.', 'تغير لون الوجه للشحوب أو الزرقة.'],
+    tree: {
+      id: 'q_chk_1',
+      question: 'هل المصاب قادر على السعال بقوة أو إصدار أصوات؟',
+      yes: {
+        action: '1. شجعه باستمرار على الاستمرار في السعال بشدة.\n2. السعال الشديد هو أفضل طريقة طبيعية لإخراج الجسم الغريب من مجرى الهواء.\n3. قف بجانبه وراقبه باستمرار.',
+        avoid: 'لا تضرب على ظهره وهو يسعل لأن هذا قد يدفع الجسم الغريب لأسفل بالخطأ، ولا تعطِه ماء.'
+      },
+      no: {
+        id: 'q_chk_2',
+        question: 'هل المصاب ما زال واعياً ومستيقظاً؟',
+        yes: {
+          action: 'مناورة هيمليك (لشخص بالغ واعٍ):\n1. قف خلف المصاب ولُف ذراعيك حول خصره.\n2. اصنع قبضة بإحدى يديك وضعها أعلى السرة مباشرة وأسفل القفص الصدري.\n3. امسك قبضتك بيدك الأخرى واضغط بقوة وسرعة للداخل وللأعلى معاً (كأنك تحاول رفعه للأعلى).\n4. كرر الضغطات حتى يخرج الجسم الغريب أو يفقد الوعي.',
+          avoid: 'لا تضغط على العظام أو القفص الصدري مباشرة بل أسفله في البطن.'
+        },
+        no: {
+          action: 'إنقاذ فاقد الوعي بسبب الاختناق:\n1. أنزل المصاب بلطف على الأرض على ظهره.\n2. افتح فمه وحاول رؤية الشئ المسبب للاختناق، وإذا كان واضحاً جداً اسحبه بإصبعك.\n3. ابدأ فوراً بعمل ضغطات صدرية (مثل CPR) بالضغط 30 مرة منتصف الصدر لطرده.',
+          avoid: 'لا تدخل أصابعك بشكل عشوائي داخل الحلق إن لم تكن ترى الجسم الغريب بوضوح.'
+        }
+      }
+    },
+    source: 'AHA Adult Basic Life Support Guidelines.'
+  },
+  {
+    id: 'cardiac',
+    icon: 'bi-heart-pulse',
+    title: 'توقف القلب والنفس',
+    tag: 'CPR & AED',
+    short: 'فقدان الاستجابة والتنفس الطبيعي.',
+    signs: ['عدم الاستجابة إطلاقاً عند النداء.', 'غياب التنفس أو وجود شهقات احتضار غير منتظمة.'],
+    tree: {
+      id: 'q_car_1',
+      question: 'عند هز كتفي الشخص والنداء بصوت عالٍ: هل يستجيب أو يتحرك؟',
+      yes: {
+        action: '1. ضعه في "وضع الإفاقة" (على جانبه الأيمن أو الأيسر).\n2. ثبّت رأسه مائلاً للخلف لفتح مجرى الهواء ومنع انسداده باللسان.\n3. اترك يديه وقدميه في وضع مريح وراقب تنفسه بشكل مستمر.',
+        avoid: 'لا تتركه مستلقياً على ظهره.'
+      },
+      no: {
+        id: 'q_car_2',
+        question: 'ضع أذنك قرب فمه وراقب صدره لـ 5 ثوانٍ: هل يتنفس بصورة طبيعية؟',
+        yes: {
+          action: 'المصاب فاقد للوعي ولكنه يتنفس: ضعه فوراً في وضع الإفاقة على جانبه وراقب حركة صدره كل دقيقة.',
+          avoid: 'لا تبدأ بالضغطات الصدرية طالما يتنفس بشكل طبيعي.'
+        },
+        no: {
+          action: 'بدء الإنعاش القلبي الرئوي (CPR):\n1. انزع أو افتح الملابس عن صدر المصاب.\n2. ضع كعب يدك الأولى في مركز الصدر تماماً (بين الثديين).\n3. ضع يدك الثانية فوق الأولى واشتبك بأصابعك.\n4. اجعل ذراعيك مستقيمين تماماً واضغط بعمق 5 سم وبسرعة (100-120 ضغطة في الدقيقة - على إيقاع سريع متواصل).\n5. لا تتوقف إلا عند استعادة تنفسه أو وصول الإسعاف.',
+          avoid: 'لا تتوقف عن الضغط الصدري متواصل للراحة.'
+        }
+      }
+    },
+    source: 'AHA CPR & Emergency Cardiovascular Care.'
+  },
+  {
+    id: 'bleeding',
+    icon: 'bi-droplet-half',
+    title: 'النزيف الحاد',
+    tag: 'BLEEDING',
+    short: 'فقدان شديد للدم من جرح مفتوح.',
+    signs: ['اندفاع الدم بغزارة.', 'تشبع الملابس بالدم بسرعة.'],
+    tree: {
+      id: 'q_bld_1',
+      question: 'هل ينبعث الدم بضغط عالٍ وينبض بقوة خارج الجرح (نزيف شرياني)؟',
+      yes: {
+        action: '1. أحضر قماشاً نظيفاً أو ضمادة شاش وضعه فوراً فوق مكان النزيف مباشرة.\n2. اضغط بأقصى قوتك بكلا اليدين فوق الضمادة دون تخفيف الضغط إطلاقاً.\n3. ارفع الطرف المصاب (اليد أو القدم) أعلى من مستوى القلب إن لم يكن هناك كسر.\n4. إذا امتلأت القماشة بالدم، لا تزلها! بل ضع قماشة أخرى فوقها واستمر بالضغط.',
+        avoid: 'لا ترفع يدك لتفحص الجرح كل شوية، ولا تضع قهوة أو ثلج أو بودرة داخل الجرح.'
+      },
+      no: {
+        action: '1. اغسل الجرح بماء جاري نظيف لعدة دقائق لتنظيفه.\n2. اضغط بضمادة معقمة أو قماش نظيف حتى يتوقف الدم تماماً.\n3. غطِّ الجرح بشاش معقم وثبّته بلاصق طبّي.',
+        avoid: 'لا تترك الجرح مكشوفاً للتلوث والأتربة.'
+      }
+    },
+    source: 'Red Cross First Aid Bleeding Management.'
+  },
+  {
+    id: 'burns',
+    icon: 'bi-fire',
+    title: 'الحروق',
+    tag: 'THERMAL INJURY',
+    short: 'تضرر الجلد والأنسجة بفعل الحرارة أو المواد الكيميائية.',
+    signs: ['احمرار شديد وآلام', 'فقاعات مائية مملوءة بالسائل', 'جلد متفحم أو أبيض شمعي'],
+    tree: {
+      id: 'q_brn_1',
+      question: 'هل الحرق واسع المساحة (أكبر من كف اليد) أو يتضمن تفحماً بالجلد أو فقاعات مائية كثيرة؟',
+      yes: {
+        action: '1. صب ماء صنبور فاتر (ليس بارداً جداً ولا ثلج) على منطقة الحرق لمدة لا تقل عن 10 إلى 20 دقيقة متواصلة.\n2. انزع أي إكسسوارات أو ساعات أو ملابس غير ملتصقة بالحرق ببطء قبل أن تتورم المنطقة.\n3. غَطِّ الحرق بلطف شديد باستخدام غلاف بلاستيكي نظيف (Cling Film الخاص بالطعام) أو ضمادة معقمة غير لاصقة.',
+        avoid: 'لا تفقع الفقاعات المائية إطلاقاً، ولا تضع ثلجاً مباشراً، ولا تضع معجون أسنان أو سمن أو زبدة.'
+      },
+      no: {
+        action: '1. ضع المنطقة المصابة تحت ماء الصنبور الجاري لمدة 10 دقائق لتهدئة الألم.\n2. ضع كريم مخصص للحروق (مثل ميبو) وغطه بشاش نظيف غير لاصق.',
+        avoid: 'لا تحك الجلد ولا تستخدم مواد كيميائية غير مخصصة.'
+      }
+    },
+    source: 'Red Cross Burn Care Guidelines.'
+  },
+  {
+    id: 'drowning',
+    icon: 'bi-water',
+    title: 'الغرق',
+    tag: 'WATER SAFETY',
+    short: 'انسداد التنفس السريع بسبب دخول المياه لمجرى الهواء.',
+    signs: ['استخراج الشخص من الماء.', 'عدم الاستجابة أو ازرقاق الشفتين.', 'خروج رغوة أو سائل من الفم.'],
+    tree: {
+      id: 'q_drn_1',
+      question: 'بعد سحب المصاب من الماء: هل هو واعٍ ويستجيب لك ويتنفس؟',
+      yes: {
+        action: '1. جفف جسم المصاب بسرعة وأزل الملابس المبتلة عنه.\n2. غَطِّه ببطانية أو ملابس جافة لمنع انخفاض درجة حرارة جسمه (Hypothermia).\n3. ضعه في وضعية مريحة وراقب تنفسه باستمرار.',
+        avoid: 'لا تتركه في مكان بارد ولا تدعه يستلقي على الأرض المبتلة.'
+      },
+      no: {
+        id: 'q_drn_2',
+        question: 'المصاب فاقد للوعي: هل تلاحظ حركة صدره أو تنفسه بشكل طبيعي؟',
+        yes: {
+          action: '1. ضعه فوراً في "وضع الإفاقة" على جانبه لمنع اختناقه بالماء أو القيء المرتجع من المعدة.\n2. امل رأسه للخلف قليلاً وراقب حركة صدره بانتظام.',
+          avoid: 'لا تحاول الضغط على بطنه لإخراج الماء من معدته.'
+        },
+        no: {
+          action: 'إنقاذ غريق فاقد للوعي ولا يتنفس:\n1. ضع المصاب على ظهره على أرض جافة وصفحة صلبة.\n2. افتح مجرى الهواء بإمالة رأسه للخلف ورفع ذقنه للأعلى.\n3. اعطِه 5 أنفاس إنقاذية أُولى (انفخ الهواء بقوة في فمه مع إغلاق أنفه حتى يرتقي صدره).\n4. ابدأ فوراً بدورة الإنعاش (30 ضغطة صدرية منتصف الصدر ثم نفصين إنقاذيين) واستمر دون توقف.',
+          avoid: 'لا تضيع أي ثانية في محاولة الضغط على البطن لعصر الماء من الرئتين؛ الأكسجين فوراً هو الأهم.'
+        }
+      }
+    },
+    source: 'AHA / Red Cross Resuscitation & Drowning Guidelines.'
+  }
 ];
 
-/* ============================================================
-   EMERGENCY LIBRARY
-   ============================================================ */
-
+/* ---------- Render Cards ---------- */
 const grid = document.getElementById('caseGrid');
+ProfesionalRenderCards();
 
-function renderCaseCards() {
-  if (!grid) return;
-
-  grid.innerHTML = CASES.map(
-    (c, index) => `
-      <div class="col-md-6 col-lg-4">
-        <article
-          class="condition-card reveal"
-          style="--case-index:${index};"
-        >
-          <div class="condition-icon">
-            <i class="bi ${escapeHTML(c.icon)}"></i>
-          </div>
-
-          <span class="mini-label d-block mt-3">
-            ${escapeHTML(c.tag)}
-          </span>
-
-          <h3>${escapeHTML(c.title)}</h3>
-
-          <p class="short">
-            ${escapeHTML(c.short)}
-          </p>
-
-          <h6>علامات مهمة</h6>
-
-          <ul>
-            ${c.signs
-              .slice(0, 3)
-              .map((sign) => `<li>${escapeHTML(sign)}</li>`)
-              .join('')}
-          </ul>
-
-          <button
-            type="button"
-            class="btn btn-outline-light rounded-pill mt-2"
-            onclick="openCase('${escapeHTML(c.id)}')"
-          >
-            عرض التفاصيل
-            <i class="bi bi-arrow-left"></i>
-          </button>
-        </article>
-      </div>
-    `
-  ).join('');
-
-  /* Activate the same reveal system for newly generated cards */
-  requestAnimationFrame(() => {
-    grid.querySelectorAll('.reveal').forEach((element) => {
-      element.classList.add('show');
-    });
-  });
+function ProfesionalRenderCards() {
+  if (!grid) return;
+  grid.innerHTML = CASES.map(
+    (c) => `<div class="col-md-6 col-lg-4"><article class="condition-card reveal show">
+  <div class="condition-icon"><i class="bi ${c.icon}"></i></div><span class="mini-label d-block mt-3">${c.tag}</span>
+  <h3>${c.title}</h3><p class="short">${c.short}</p><h6>علامات تشخيصية</h6><ul>${c.signs
+    .map((s) => `<li>${s}</li>`)
+    .join('')}</ul>
+  <button class="btn btn-outline-light rounded-pill mt-2" onclick="openCase('${c.id}')">عرض التفاصيل <i class="bi bi-arrow-left"></i></button></article></div>`
+  ).join('');
 }
-
-renderCaseCards();
-
-/* ============================================================
-   CASE MODAL
-   ============================================================ */
 
 function openCase(id) {
-  const currentCaseData = CASES.find((item) => item.id === id);
+  const c = CASES.find((x) => x.id === id);
+  if (!c) return;
+  const old = document.getElementById('caseModal');
+  if (old) old.remove();
+  
+  const formattedAction = c.tree.yes ? (c.tree.yes.action ? c.tree.yes.action.replace(/\n/g, '<br>') : c.tree.yes.yes.action.replace(/\n/g, '<br>')) : c.tree.action ? c.tree.action.replace(/\n/g, '<br>') : 'اقرأ خطوات التشخيص التفاعلي.';
+  const formattedAvoid = c.tree.yes ? (c.tree.yes.avoid ? c.tree.yes.avoid : c.tree.yes.yes.avoid) : c.tree.avoid;
 
-  if (!currentCaseData || typeof bootstrap === 'undefined') return;
-
-  const oldModal = document.getElementById('caseModal');
-
-  if (oldModal) {
-    oldModal.remove();
-  }
-
-  const detailedSteps = currentCaseData.detailedAction
-    .map(
-      (step, index) => `
-        <div class="step d-flex gap-3 mb-3">
-          <span class="step-num">${index + 1}</span>
-          <span>${escapeHTML(step)}</span>
-        </div>
-      `
-    )
-    .join('');
-
-  const avoid = currentCaseData.avoid
-    .map(
-      (item) =>
-        `<li class="mb-2">${escapeHTML(item)}</li>`
-    )
-    .join('');
-
-  document.body.insertAdjacentHTML(
-    'beforeend',
-    `
-      <div
-        class="modal fade"
-        id="caseModal"
-        tabindex="-1"
-        aria-hidden="true"
-      >
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-          <div class="modal-content modal-dark">
-
-            <div class="modal-header border-secondary">
-              <div>
-                <span class="mini-label">
-                  ${escapeHTML(currentCaseData.tag)}
-                </span>
-
-                <h3>${escapeHTML(currentCaseData.title)}</h3>
-              </div>
-
-              <button
-                type="button"
-                class="btn-close btn-close-white"
-                data-bs-dismiss="modal"
-                aria-label="إغلاق"
-              ></button>
-            </div>
-
-            <div class="modal-body">
-
-              <p class="result-note">
-                ${escapeHTML(currentCaseData.short)}
-              </p>
-
-              <h5>علامات مهمة</h5>
-
-              <ul>
-                ${currentCaseData.signs
-                  .map(
-                    (sign) =>
-                      `<li class="mb-2">${escapeHTML(sign)}</li>`
-                  )
-                  .join('')}
-              </ul>
-
-              <h5 class="mt-4">
-                ما الذي يركز عليه الحل؟
-              </h5>
-
-              <div class="guide-result">
-                ${escapeHTML(currentCaseData.action)}
-              </div>
-
-              <h5 class="mt-4">
-                شرح أكثر تفصيلًا
-              </h5>
-
-              <div class="guide-result">
-                ${detailedSteps}
-              </div>
-
-              <h5 class="mt-4 text-danger">
-                تجنب تمامًا
-              </h5>
-
-              <ul class="text-warning">
-                ${avoid}
-              </ul>
-
-              <div class="mt-4 text-center">
-                ${callEmergencyHTML}
-              </div>
-
-              <div class="safety-note mt-4">
-                <i class="bi bi-shield-check"></i>
-                ${escapeHTML(currentCaseData.source)}
-                <br>
-                هذا الموقع تعليمي ولا يَستبدل خدمات الطوارئ أو التدريب
-                العملي المعتمد.
-              </div>
-
-            </div>
-
-            <div class="modal-footer border-secondary">
-              <button
-                type="button"
-                class="btn btn-outline-light rounded-pill"
-                data-bs-dismiss="modal"
-              >
-                إغلاق
-              </button>
-
-              <a
-                href="guide.html?case=${encodeURIComponent(currentCaseData.id)}"
-                class="btn btn-danger rounded-pill"
-              >
-                الدليل التفاعلي
-              </a>
-            </div>
-
-          </div>
-        </div>
-      </div>
-    `
-  );
-
-  const modalElement = document.getElementById('caseModal');
-  const modal = new bootstrap.Modal(modalElement);
-
-  modalElement.addEventListener(
-    'shown.bs.modal',
-    () => {
-      modalElement
-        .querySelectorAll('.step')
-        .forEach((step, index) => {
-          step.style.animationDelay = `${index * 80}ms`;
-          step.classList.add('najah-step-in');
-        });
-    },
-    { once: true }
-  );
-
-  modal.show();
+  document.body.insertAdjacentHTML(
+    'beforeend',
+    `<div class="modal fade" id="caseModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content modal-dark">
+ <div class="modal-header border-secondary"><div><span class="mini-label">${c.tag}</span><h3>${c.title}</h3></div><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+ <div class="modal-body"><p class="result-note">${c.short}</p><h5>علامات مهمة</h5><ul>${c.signs.map((s) => `<li class="mb-2">${s}</li>`).join('')}</ul>
+ <h5 class="mt-4">التصرف المباشر</h5><div class="guide-result">${formattedAction}</div>
+ <h5 class="mt-4 text-danger">تجنب تماماً</h5><div class="result-note text-warning">${formattedAvoid}</div>
+ <div class="mt-4 text-center">
+   <a href="tel:123" class="btn btn-danger btn-lg rounded-pill px-4"><i class="bi bi-telephone-fill ms-2"></i> اتصل بالإسعاف (123)</a>
+ </div>
+ <div class="safety-note mt-4"><i class="bi bi-shield-check"></i> ${c.source}</div></div>
+ <div class="modal-footer border-secondary"><button class="btn btn-outline-light rounded-pill" data-bs-dismiss="modal">إغلاق</button><a href="guide.html?case=${c.id}" class="btn btn-danger rounded-pill">بدء التشخيص التفاعلي</a></div>
+ </div></div></div>`
+  );
+  new bootstrap.Modal('#caseModal').show();
 }
 
-/* ============================================================
-   INTERACTIVE DECISION TREE
-   ============================================================ */
-
+/* ---------- Decision Tree Interactive Engine ---------- */
 const guide = document.getElementById('guideApp');
-
 let currentCase = null;
 let currentNode = null;
 
 function guideStart() {
-  if (!guide) return;
-
-  currentCase = null;
-  currentNode = null;
-
-  guide.innerHTML = `
-    <div class="guide-question mb-3">
-      اختر الحالة التي تريد فهمها
-    </div>
-
-    <div class="result-note mb-4">
-      إذا كانت هناك حالة طارئة حقيقية الآن، لا تعتمد على الموقع وحده.
-      اتصل بالإسعاف المحلي واتبع تعليمات المختص.
-    </div>
-
-    <div class="mb-4 text-center">
-      ${callEmergencyHTML}
-    </div>
-
-    <div class="guide-options">
-      ${CASES.map(
-        (c, index) => `
-          <button
-            type="button"
-            class="guide-option"
-            style="--case-index:${index};"
-            onclick="selectGuideCase('${escapeHTML(c.id)}')"
-          >
-            <i class="bi ${escapeHTML(c.icon)}"></i>
-            <b>${escapeHTML(c.title)}</b>
-            <small class="d-block text-secondary mt-2">
-              ${escapeHTML(c.short)}
-            </small>
-          </button>
-        `
-      ).join('')}
-    </div>
-  `;
-
-  updateGuideProgress(1);
-  animateGuideContent();
+  if (!guide) return;
+  guide.innerHTML = `
+    <div class="guide-question mb-3"> في كل الحالات اتصل بالاسعاف وابتعد في حالة وجود شخص لديه علم بالاسعافات الاولية </div>
+    <div class="mb-4 text-center">
+       <a href="tel:123" class="btn btn-danger rounded-pill w-100 py-3 fs-5 shadow"><i class="bi bi-telephone-fill ms-2"></i> اتصل بالإسعاف فوراً (123)</a>
+    </div>
+    <div class="guide-options">
+      ${CASES.map((c) => `
+        <button class="guide-option ${c.id === 'unknown' ? 'border-danger bg-dark' : ''}" onclick="selectGuideCase('${c.id}')">
+          <i class="bi ${c.icon} ${c.id === 'unknown' ? 'text-danger fs-3' : ''}"></i>
+          <b>${c.title}</b>
+          <small class="d-block text-secondary mt-2">${c.short}</small>
+        </button>
+      `).join('')}
+    </div>`;
+  updateGuideProgress(1);
 }
 
 function selectGuideCase(id) {
-  const selected = CASES.find((item) => item.id === id);
-
-  if (!selected || !guide) return;
-
-  currentCase = selected;
-  currentNode = selected.tree;
-
-  renderDecisionNode();
+  currentCase = CASES.find((x) => x.id === id);
+  if (!currentCase) return;
+  currentNode = currentCase.tree;
+  renderDecisionNode();
 }
 
 function renderDecisionNode() {
-  if (!currentNode || !guide) return;
+  if (!currentNode || !guide) return;
 
-  if (currentNode.action) {
-    showFinalResult(currentNode);
-    return;
-  }
+  if (currentNode.action) {
+    showFinalResult(currentNode);
+    return;
+  }
 
-  guide.innerHTML = `
-    <div class="d-flex justify-content-between align-items-center mb-3 gap-3">
-      <span class="mini-label">
-        ${escapeHTML(currentCase.tag)} • ${escapeHTML(currentCase.title)}
-      </span>
-
-      <a
-        href="tel:${EMERGENCY_NUMBER}"
-        class="btn btn-sm btn-danger rounded-pill"
-      >
-        <i class="bi bi-telephone-fill ms-1"></i>
-        ${EMERGENCY_NUMBER}
-      </a>
-    </div>
-
-    <div class="guide-question">
-      ${escapeHTML(currentNode.question)}
-    </div>
-
-    <div class="guide-options mt-4">
-
-      <button
-        type="button"
-        class="guide-option text-center p-4"
-        onclick="processAnswer('yes')"
-      >
-        <i class="bi bi-check-circle-fill text-success fs-2 d-block mb-2"></i>
-        <b class="fs-4">نعم</b>
-      </button>
-
-      <button
-        type="button"
-        class="guide-option text-center p-4"
-        onclick="processAnswer('no')"
-      >
-        <i class="bi bi-x-circle-fill text-danger fs-2 d-block mb-2"></i>
-        <b class="fs-4">لا</b>
-      </button>
-
-    </div>
-
-    <div class="guide-actions mt-4">
-      <button
-        type="button"
-        class="btn btn-outline-light rounded-pill"
-        onclick="guideStart()"
-      >
-        <i class="bi bi-arrow-right"></i>
-        القائمة الرئيسية
-      </button>
-    </div>
-  `;
-
-  updateGuideProgress(2);
-  animateGuideContent();
+  guide.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <span class="mini-label">${currentCase.tag} • ${currentCase.title}</span>
+      <a href="tel:123" class="btn btn-sm btn-danger rounded-pill"><i class="bi bi-telephone-fill ms-1"></i> إسعاف 123</a>
+    </div>
+    <div class="guide-question">${currentNode.question}</div>
+    <div class="guide-options mt-4">
+      <button class="guide-option text-center p-4" onclick="processAnswer('yes')">
+        <i class="bi bi-check-circle-fill text-success fs-2 d-block mb-2"></i>
+        <b class="fs-4">نــعــم</b>
+      </button>
+      <button class="guide-option text-center p-4" onclick="processAnswer('no')">
+        <i class="bi bi-x-circle-fill text-danger fs-2 d-block mb-2"></i>
+        <b class="fs-4">لا</b>
+      </button>
+    </div>
+    <div class="guide-actions mt-4 d-flex justify-content-between">
+      <button class="btn btn-outline-light rounded-pill" onclick="guideStart()"><i class="bi bi-arrow-right"></i> القائمة الرئيسية</button>
+    </div>`;
+  updateGuideProgress(2);
 }
 
 function processAnswer(choice) {
-  if (!currentNode) return;
+  const next = currentNode[choice];
+  if (!next) return;
 
-  const nextNode = currentNode[choice];
-
-  if (!nextNode) return;
-
-  currentNode = nextNode;
-  renderDecisionNode();
+  if (typeof next === 'object') {
+    currentNode = next;
+    renderDecisionNode();
+  }
 }
 
-function showFinalResult(result) {
-  if (!guide) return;
-
-  guide.innerHTML = `
-    <div class="guide-result">
-
-      <div
-        class="alert alert-danger d-flex align-items-center
-               justify-content-between p-3 rounded-4 mb-4 gap-3"
-      >
-        <div>
-          <i class="bi bi-telephone-outbound-fill fs-3 me-2"></i>
-          <strong class="fs-5">
-            في حالة حقيقية: تواصل مع الطوارئ
-          </strong>
-        </div>
-
-        <a
-          href="tel:${EMERGENCY_NUMBER}"
-          class="btn btn-light text-danger fw-bold rounded-pill px-4"
-        >
-          اتصل ${EMERGENCY_NUMBER}
-        </a>
-      </div>
-
-      <h4 class="text-white mb-3">
-        <i class="bi bi-shield-fill-check text-danger"></i>
-        الفكرة الأساسية:
-      </h4>
-
-      <div
-        class="fs-5 text-light mb-4"
-        style="line-height:1.9;"
-      >
-        ${escapeHTML(result.action)}
-      </div>
-
-      <hr class="border-secondary">
-
-      <h5 class="text-danger mt-3">
-        <i class="bi bi-exclamation-triangle-fill"></i>
-        مهم:
-      </h5>
-
-      <p class="result-note text-warning fs-6">
-        ${escapeHTML(result.avoid)}
-      </p>
-
-    </div>
-
-    <div class="guide-actions mt-4 d-flex gap-2 flex-wrap">
-
-      <a
-        href="tel:${EMERGENCY_NUMBER}"
-        class="btn btn-danger rounded-pill px-4 flex-grow-1"
-      >
-        <i class="bi bi-telephone-fill ms-2"></i>
-        الاتصال بالإسعاف ${EMERGENCY_NUMBER}
-      </a>
-
-      <button
-        type="button"
-        class="btn btn-outline-light rounded-pill"
-        onclick="selectGuideCase('${escapeHTML(currentCase.id)}')"
-      >
-        <i class="bi bi-arrow-counterclockwise"></i>
-        إعادة
-      </button>
-
-      <button
-        type="button"
-        class="btn btn-outline-light rounded-pill"
-        onclick="guideStart()"
-      >
-        حالة أخرى
-      </button>
-
-    </div>
-  `;
-
-  updateGuideProgress(4);
-  animateGuideContent();
+function showFinalResult(res) {
+  const formattedAction = res.action.replace(/\n/g, '<br>');
+  guide.innerHTML = `
+    <div class="guide-result">
+      <div class="alert alert-danger d-flex align-items-center justify-content-between p-3 rounded-4 mb-4">
+        <div>
+           <i class="bi bi-telephone-outbound-fill fs-3 me-2"></i>
+           <strong class="fs-5">تواصل مع الطوارئ فوراً</strong>
+        </div>
+        <a href="tel:123" class="btn btn-light text-danger fw-bold rounded-pill px-4">اتصل 123</a>
+      </div>
+      <h4 class="text-white mb-3"><i class="bi bi-shield-fill-check text-danger"></i> الإجراء الفوري الموصى به:</h4>
+      <div class="fs-5 text-light mb-4" style="line-height:1.9;">${formattedAction}</div>
+      <hr class="border-secondary">
+      <h5 class="text-danger mt-3"><i class="bi bi-exclamation-triangle-fill"></i> تحذير هام جداً:</h5>
+      <p class="result-note text-warning fs-6">${res.avoid}</p>
+    </div>
+    <div class="guide-actions mt-4 d-flex gap-2 flex-wrap">
+      <a href="tel:123" class="btn btn-danger rounded-pill px-4 flex-grow-1"><i class="bi bi-telephone-fill ms-2"></i> الاتصال بالإسعاف (123)</a>
+      <button class="btn btn-outline-light rounded-pill" onclick="selectGuideCase('${currentCase.id}')"><i class="bi bi-arrow-counterclockwise"></i> إعادة</button>
+      <button class="btn btn-outline-light rounded-pill" onclick="guideStart()">حالة أخرى</button>
+    </div>`;
+  updateGuideProgress(4);
 }
 
-function updateGuideProgress(step) {
-  const progressText = document.getElementById('progressText');
-  const progressBar = document.getElementById('guideProgress');
-
-  if (progressText) {
-    progressText.textContent = step + ' / 4';
-  }
-
-  if (progressBar) {
-    progressBar.style.width = (step / 4) * 100 + '%';
-  }
+function updateGuideProgress(n) {
+  const t = document.getElementById('progressText'),
+    p = document.getElementById('guideProgress');
+  if (t) t.textContent = n + ' / 4';
+  if (p) p.style.width = (n / 4) * 100 + '%';
 }
-
-function animateGuideContent() {
-  if (!guide) return;
-
-  const items = guide.querySelectorAll(
-    '.guide-question, .guide-option, .guide-result, .guide-actions'
-  );
-
-  items.forEach((item, index) => {
-    item.classList.remove('najah-guide-in');
-
-    setTimeout(() => {
-      item.classList.add('najah-guide-in');
-    }, index * 55);
-  });
-}
-
-/* ============================================================
-   AUTO OPEN GUIDE CASE FROM URL
-   ============================================================ */
 
 if (guide) {
-  const params = new URLSearchParams(window.location.search);
-  const caseId = params.get('case');
-
-  if (caseId && CASES.some((item) => item.id === caseId)) {
-    selectGuideCase(caseId);
-  } else {
-    guideStart();
-  }
+  const params = new URLSearchParams(location.search);
+  const id = params.get('case');
+  if (id) {
+    selectGuideCase(id);
+  } else {
+    guideStart();
+  }
 }
-
-/* ============================================================
-   SCENARIO SIMULATOR
-   ============================================================ */
-
-const scenario = document.getElementById('scenarioBox');
-
-const scenarios = [
-  {
-    q: 'أنت ترى شخصًا يبدو عليه فقدان الاستجابة. ما الأولوية؟',
-
-    a: [
-      'البدء في البحث عن وصفة منزلية',
-      'طلب المساعدة وتفعيل خدمات الطوارئ',
-      'ترك المكان دون طلب المساعدة',
-      'الانتظار حتى يتحسن',
-    ],
-
-    good: 1,
-
-    why:
-      'في حالات فقدان الاستجابة مع غياب التنفس الطبيعي، تفعيل الاستجابة الطارئة والبدء بالمساعدة المناسبة وفق التدريب أمر أساسي.',
-  },
-
-  {
-    q: 'المكان نفسه قد يكون خطرًا. ماذا تفعل أولًا؟',
-
-    a: [
-      'أندفع للمساعدة مهما كان الخطر',
-      'أتأكد من سلامة المكان قدر الإمكان',
-      'أصور فيديو للموقف',
-      'أنتظر دون طلب المساعدة',
-    ],
-
-    good: 1,
-
-    why:
-      'تقييم سلامة المكان جزء أساسي من خطوات الإسعافات الأولية؛ لا ينبغي أن يصبح المنقذ مصابًا ثانيًا.',
-  },
-
-  {
-    q: 'شخص لديه علامات مفاجئة قد تشير إلى سكتة دماغية. ما الفكرة الأساسية؟',
-
-    a: [
-      'أنتظر حتى تختفي الأعراض',
-      'أبحث لساعات عن علاج منزلي',
-      'أتعرف على العلامات وأطلب مساعدة عاجلة',
-      'أعطيه دواء من عندي',
-    ],
-
-    good: 2,
-
-    why:
-      'الوقت مهم عند الاشتباه في السكتة الدماغية، لذلك لا ينبغي تأخير التقييم الطبي بسبب الانتظار أو العلاج الذاتي.',
-  },
-
-  {
-    q: 'شخص لا يستطيع الكلام أو السعال بشكل فعال ويبدو مختنقًا. ما الأولوية؟',
-
-    a: [
-      'إعطاؤه ماء',
-      'تجاهل الأمر حتى يهدأ',
-      'تفعيل الاستجابة الطارئة واتباع الإرشادات المناسبة للحالة',
-      'إدخال الإصبع في الفم بشكل عشوائي',
-    ],
-
-    good: 2,
-
-    why:
-      'الانسداد الشديد لمجرى الهواء حالة طارئة. التقنية المناسبة تختلف حسب العمر والحالة ويجب اتباع التدريب أو تعليمات خدمات الطوارئ.',
-  },
-];
-
-let scenarioIndex = 0;
-
-function renderScenario() {
-  if (!scenario) return;
-
-  const currentScenario = scenarios[scenarioIndex];
-
-  scenario.innerHTML = `
-    <span class="scenario-kicker">
-      SCENARIO ${scenarioIndex + 1}/${scenarios.length}
-    </span>
-
-    <h3>${escapeHTML(currentScenario.q)}</h3>
-
-    ${currentScenario.a
-      .map(
-        (answer, index) => `
-          <button
-            type="button"
-            class="scenario-option"
-            onclick="answerScenario(${index})"
-          >
-            ${escapeHTML(answer)}
-          </button>
-        `
-      )
-      .join('')}
-
-    <div id="scenarioFeedback"></div>
-  `;
-
-  scenario
-    .querySelectorAll('.scenario-option')
-    .forEach((button, index) => {
-      button.style.animationDelay = `${index * 70}ms`;
-      button.classList.add('najah-guide-in');
-    });
-}
-
-function answerScenario(index) {
-  const currentScenario = scenarios[scenarioIndex];
-  const feedback = document.getElementById('scenarioFeedback');
-
-  if (!feedback) return;
-
-  if (index === currentScenario.good) {
-    feedback.innerHTML = `
-      <div class="scenario-feedback">
-        <b class="text-success">
-          ✓ اختيار مناسب
-        </b>
-
-        <p class="mb-0 mt-2">
-          ${escapeHTML(currentScenario.why)}
-        </p>
-      </div>
-
-      <button
-        type="button"
-        class="btn btn-light rounded-pill mt-3"
-        onclick="nextScenario()"
-      >
-        التالي
-      </button>
-    `;
-  } else {
-    feedback.innerHTML = `
-      <div class="scenario-feedback">
-        <b class="text-warning">
-          راجع الفكرة
-        </b>
-
-        <p class="mb-0 mt-2">
-          في موقف طارئ، ركز على سلامة المكان وطلب المساعدة
-          المناسبة بدل التأخير أو التجربة العشوائية.
-        </p>
-      </div>
-    `;
-  }
-}
-
-function nextScenario() {
-  scenarioIndex = (scenarioIndex + 1) % scenarios.length;
-  renderScenario();
-}
-
-renderScenario();
-
-/* ============================================================
-   OPTIONAL GLOBAL ACCESS
-   Keeps compatibility with inline onclick attributes
-   ============================================================ */
-
-window.CASES = CASES;
-window.openCase = openCase;
-window.guideStart = guideStart;
-window.selectGuideCase = selectGuideCase;
-window.processAnswer = processAnswer;
-window.renderDecisionNode = renderDecisionNode;
-window.answerScenario = answerScenario;
-window.nextScenario = nextScenario;
-window.renderScenario = renderScenario;
